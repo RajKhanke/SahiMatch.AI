@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sahimatch - Intelligent Invoice Matching</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#ffeef9',
+                100: '#ffdaec',
+                200: '#ffc2df',
+                300: '#ffa9d1',
+                400: '#ff91c4',
+                500: '#ff79b7',
+                600: '#f06fae',
+                700: '#e065a4',
+                800: '#d45a9b',
+                900: '#c84f91'
+              },
+              secondary: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                200: '#bae6fd',
+                300: '#7dd3fc',
+                400: '#38bdf8',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                700: '#0369a1',
+                800: '#075985',
+                900: '#0c4a6e'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Preloader Styles */
+      .preloader {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        transition: opacity 0.5s ease-out;
+      }
+      .preloader.hide {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #ccc;
+        border-top: 5px solid #0ea5e9;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      /* Floating animation for images */
+      @keyframes float {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0); }
+      }
+      .animate-float {
+        animation: float 3s ease-in-out infinite;
+      }
+      /* Fade-in animation for sections */
+      @keyframes fadeIn {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 1s ease-out forwards;
+      }
+      /* Slide-in animation for chatbot */
+      @keyframes slideIn {
+        0% { transform: translateX(100%); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+      .animate-slide-in {
+        animation: slideIn 0.5s ease-out forwards;
+      }
+      /* Animated gradient border for solution section */
+      .gradient-border {
+        position: relative;
+        padding: 2rem;
+        border-radius: 1rem;
+        overflow: hidden;
+      }
+      .gradient-border::before {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #0ea5e9, #ff79b7, #0ea5e9);
+        background-size: 400% 400%;
+        z-index: -1;
+        border-radius: inherit;
+        animation: gradientBG 5s ease infinite;
+      }
+      @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      /* Navbar & User Icon Styles */
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .user-menu {
+        position: relative;
+        cursor: pointer;
+      }
+      .user-icon {
+        width: 40px;
+        height: 40px;
+        background: #ffeef9;
+        color: #c84f91;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
+      }
+      .dropdown {
+        display: none;
+        position: absolute;
+        top: 45px;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+        width: 150px;
+        z-index: 100;
+      }
+      .dropdown a {
+        display: block;
+        padding: 8px;
+        text-decoration: none;
+        color: black;
+      }
+      .dropdown a:hover {
+        background: #f2c1d1;
+      }
+      /* Modal styling improvements for dark mode */
+      .modal-input {\n        background: white;\n        color: black;\n      }\n      .dark .modal-input {\n        background: #1f2937; /* dark gray */\n        color: #e5e7eb; /* light gray */\n      }\n      .modal-label {\n        color: #1f2937;\n      }\n      .dark .modal-label {\n        color: #e5e7eb;\n      }\n    </style>
+  </head>
+  <body class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <!-- Preloader -->
+    <div id="preloader" class="preloader">
+      <div class="spinner"></div>
+    </div>
+    
+    <!-- Theme Toggle -->
+    <button id="themeToggle" class="fixed top-4 right-4 z-50 p-2 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-900 dark:text-primary-100 hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors duration-200">
+      <i id="sunIcon" class="fas fa-sun dark:hidden"></i>
+      <i id="moonIcon" class="fas fa-moon hidden dark:inline"></i>
+    </button>
+    
+    <!-- Navigation -->
+    <nav class="fixed w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg z-40 border-b border-primary-200 dark:border-primary-800 shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+        <div class="flex items-center gap-2">
+          <img src="https://images.unsplash.com/photo-1633409361618-c73427e4e206?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80" alt="Sahimatch Logo" class="h-10 w-10 rounded-full animate-float" />
+          <span class="text-2xl font-bold bg-gradient-to-r from-secondary-500 to-primary-500 text-transparent bg-clip-text">Sahimatch</span>
+        </div>
+        <!-- Desktop Navigation: links and login/user icon inline -->
+        <div class="hidden md:flex nav-right">
+          <a href="#home" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Home</a>
+          <a href="https://rajkhanke-partialinvoicematcher.hf.space" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Match</a>
+          <a href="https://rajkhanke-dashboard.static.hf.space/index.html" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Dashboard</a>
+          <a href="#feedback" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Feedback</a>
+          <!-- Login/Signup button; will be replaced by user icon after authentication -->
+          <a id="loginSignupButton" href="javascript:void(0)" class="bg-secondary-500 text-white px-4 py-2 rounded-full hover:bg-secondary-600 transition-colors duration-200">Login/Signup</a>
+        </div>
+        <!-- Mobile Menu Toggle -->
+        <div class="md:hidden">
+          <button id="mobileMenuButton" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+      <div id="mobileMenu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t border-primary-200 dark:border-primary-800">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <a href="#home" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Home</a>
+          <a href="https://rajkhanke-partialinvoicematcher.hf.space" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Match</a>
+          <a href="https://rajkhanke-dashboard.static.hf.space/index.html" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Dashboard</a>
+          <a href="#feedback" class="px-3 py-2 hover:text-secondary-500 transition-colors duration-200">Feedback</a>
+          <!-- Login/Signup button; will be replaced by user icon after authentication -->
+          <a id="loginSignupButton" href="javascript:void(0)" class="bg-secondary-500 text-white px-4 py-2 rounded-full hover:bg-secondary-600 transition-colors duration-200">Login/Signup</a>
+        </div>
+      </div>
+    </nav>
+    
+    <!-- Authentication Modal -->
+    <div id="authModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md relative">
+        <button id="closeAuthModal" class="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 text-2xl">&times;</button>
+        <!-- Tabs for Sign In / Sign Up -->
+        <div class="mb-4 flex">
+          <button id="signInTab" class="px-4 py-2 border-b-2 border-secondary-500 font-medium modal-label">Sign In</button>
+          <button id="signUpTab" class="px-4 py-2 border-b-2 border-transparent hover:border-gray-300 font-medium modal-label">Sign Up</button>
+        </div>
+        <!-- Sign In Form -->
+        <div id="signInForm">
+          <form id="loginForm" class="space-y-4">
+            <div>
+              <label class="block mb-1 modal-label">Email</label>
+              <input type="email" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <div>
+              <label class="block mb-1 modal-label">Password</label>
+              <input type="password" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <button type="submit" class="w-full bg-secondary-500 text-white py-3 rounded-lg hover:bg-secondary-600 transition-colors duration-200">Sign In</button>
+          </form>
+        </div>
+        <!-- Sign Up Form -->
+        <div id="signUpForm" class="hidden">
+          <form id="registerForm" class="space-y-4">
+            <div>
+              <label class="block mb-1 modal-label">First Name</label>
+              <input type="text" id="firstName" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <div>
+              <label class="block mb-1 modal-label">Last Name</label>
+              <input type="text" id="lastName" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <div>
+              <label class="block mb-1 modal-label">Email</label>
+              <input type="email" id="regEmail" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <div>
+              <label class="block mb-1 modal-label">Mobile</label>
+              <input type="tel" id="mobile" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <div>
+              <label class="block mb-1 modal-label">Password</label>
+              <input type="password" id="regPassword" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <div>
+              <label class="block mb-1 modal-label">Confirm Password</label>
+              <input type="password" id="confirmPassword" class="modal-input w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+            </div>
+            <button type="submit" class="w-full bg-secondary-500 text-white py-3 rounded-lg hover:bg-secondary-600 transition-colors duration-200">Sign Up</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Home Section -->
+    <section id="home" class="pt-24 pb-20 px-4">
+      <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-8 animate-fade-in">
+          <h1 class="text-5xl md:text-6xl font-bold bg-gradient-to-r from-secondary-400 to-primary-400 text-transparent bg-clip-text leading-tight">
+            AI Driven Intelligent Partial Invoice Matcher
+          </h1>
+          <p class="text-xl">Transform your invoice reconciliation with AI-powered precision and ease using ML, NLP and Fuzzy Theory</p>
+          <a href="https://rajkhanke-partialinvoicematcher.hf.space" class="inline-block bg-secondary-500 text-white px-8 py-4 rounded-full hover:bg-secondary-600 transition-all duration-200 transform hover:scale-105 shadow-lg">Get Started Free</a>
+        </div>
+        <div class="animate-float">
+          <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Invoice Matching" class="rounded-2xl shadow-2xl w-full transform hover:scale-105 transition-transform duration-300" />
+        </div>
+      </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="py-20 px-4 bg-gray-100 dark:bg-gray-800">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-center mb-12">Powerful Features</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">🤖</div>
+            <h3 class="text-xl font-bold mb-2">AI-Powered Matching</h3>
+            <p>Automatically match invoices with purchase orders and receipts using advanced algorithms.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">📊</div>
+            <h3 class="text-xl font-bold mb-2">Real-time Analytics</h3>
+            <p>Gain instant insights into matching accuracy and process efficiency with comprehensive dashboards.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">🔄</div>
+            <h3 class="text-xl font-bold mb-2">Automated Workflow</h3>
+            <p>Streamline invoice reconciliation with automated workflows and smart notifications.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">🔍</div>
+            <h3 class="text-xl font-bold mb-2">Intelligent Partial Matching</h3>
+            <p>Handle partial invoice data and errors with an interface designed for precision.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">📈</div>
+            <h3 class="text-xl font-bold mb-2">Confidence Scoring</h3>
+            <p>Receive match recommendations with confidence scores to gauge reliability.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">🧠</div>
+            <h3 class="text-xl font-bold mb-2">Self-Learning AI</h3>
+            <p>Continuously improve matching accuracy by learning from user feedback.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">✍️</div>
+            <h3 class="text-xl font-bold mb-2">Manual Correction Interface</h3>
+            <p>Review and adjust uncertain matches with an intuitive manual interface.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">🧩</div>
+            <h3 class="text-xl font-bold mb-2">Hybrid Matching Reasoning</h3>
+            <p>Utilizes NLP, fuzzy logic, and machine learning for robust match reasoning.</p>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md hover:shadow-2xl transition-transform duration-200 transform hover:scale-105">
+            <div class="text-4xl mb-4">💡</div>
+            <h3 class="text-xl font-bold mb-2">Explainable AI</h3>
+            <p>Provides clear insights into matching decisions with transparent explanations.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Solution Section -->
+    <section id="solution" class="py-20 px-4">
+      <div class="max-w-7xl mx-auto gradient-border bg-white dark:bg-gray-800 rounded-xl p-8">
+        <h2 class="text-3xl font-bold text-center mb-8">Intelligent Partial Invoice Matching</h2>
+        <p class="text-xl mb-6 text-center">Automate matching even when invoice data is incomplete or contains errors.</p>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
+            <h3 class="text-2xl font-bold mb-4">Key Features</h3>
+            <ul class="list-none space-y-3">
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Automated AI/ML matching</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Partial data handling using NLP</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Confidence scoring for match quality</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> User-friendly manual review interface</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Self-learning improvements from feedback</li>
+            </ul>
+          </div>
+          <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg">
+            <h3 class="text-2xl font-bold mb-4">Expected Outcomes</h3>
+            <ul class="list-none space-y-3">
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> High matching accuracy</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Adaptive model improvements</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Scalable processing of large datasets</li>
+              <li class="flex items-center"><i class="fas fa-check text-secondary-500 mr-2"></i> Comprehensive match reporting</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Gallery Section -->
+    <section id="gallery" class="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-center mb-12">Live Gallery</h2>
+        <div id="galleryCarousel" class="relative overflow-hidden animate-fade-in">
+          <div id="gallerySlider" class="flex transition-transform duration-700 ease-in-out">
+            <!-- Gallery images inserted by JavaScript -->
+          </div>
+          <div id="galleryDots" class="flex justify-center mt-4 space-x-2"></div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+        <div id="faqContainer" class="space-y-4">
+          <!-- FAQ items injected by JavaScript -->
+        </div>
+      </div>
+    </section>
+    
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-20 px-4 bg-white dark:bg-gray-800">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-center mb-12">Client Testimonials</h2>
+        <div class="relative overflow-hidden">
+          <div id="testimonialSlider" class="flex gap-6 transition-transform duration-500">
+            <div class="min-w-[300px] bg-gradient-to-r from-green-400 to-blue-500 p-6 rounded-xl shadow-lg text-white">
+              <div class="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Client" class="w-12 h-12 rounded-full border-2 border-white" />
+                <div class="ml-4">
+                  <h4 class="font-semibold">Alice Smith</h4>
+                  <p class="text-sm">CEO, InnovateTech</p>
+                </div>
+              </div>
+              <p>"Sahimatch streamlined our process and increased efficiency by over 30%!"</p>
+            </div>
+            <div class="min-w-[300px] bg-gradient-to-r from-pink-500 to-red-500 p-6 rounded-xl shadow-lg text-white">
+              <div class="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Client" class="w-12 h-12 rounded-full border-2 border-white" />
+                <div class="ml-4">
+                  <h4 class="font-semibold">Michael Lee</h4>
+                  <p class="text-sm">CFO, FinCorp</p>
+                </div>
+              </div>
+              <p>"The accuracy of invoice matching has been a game changer for us."</p>
+            </div>
+            <div class="min-w-[300px] bg-gradient-to-r from-purple-500 to-indigo-500 p-6 rounded-xl shadow-lg text-white">
+              <div class="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Client" class="w-12 h-12 rounded-full border-2 border-white" />
+                <div class="ml-4">
+                  <h4 class="font-semibold">Emily Johnson</h4>
+                  <p class="text-sm">COO, MarketMakers</p>
+                </div>
+              </div>
+              <p>"Our team loves the intuitive interface and real-time analytics."</p>
+            </div>
+            <div class="min-w-[300px] bg-gradient-to-r from-yellow-500 to-orange-500 p-6 rounded-xl shadow-lg text-white">
+              <div class="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/men/76.jpg" alt="Client" class="w-12 h-12 rounded-full border-2 border-white" />
+                <div class="ml-4">
+                  <h4 class="font-semibold">Robert Brown</h4>
+                  <p class="text-sm">CTO, TechWave</p>
+                </div>
+              </div>
+              <p>"Incredible results and seamless integration with our systems."</p>
+            </div>
+            <div class="min-w-[300px] bg-gradient-to-r from-blue-400 to-teal-500 p-6 rounded-xl shadow-lg text-white">
+              <div class="flex items-center mb-4">
+                <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Client" class="w-12 h-12 rounded-full border-2 border-white" />
+                <div class="ml-4">
+                  <h4 class="font-semibold">David Kim</h4>
+                  <p class="text-sm">Head of Operations, DataSync</p>
+                </div>
+              </div>
+              <p>"The self-learning AI makes manual corrections almost unnecessary."</p>
+            </div>
+          </div>
+          <div id="sliderDots" class="flex justify-center mt-4 space-x-2"></div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Feedback Section -->
+    <section id="feedback" class="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-3xl font-bold text-center mb-12">Give us Feedback</h2>
+        <form class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg space-y-6">
+          <div>
+            <label class="block mb-2">Name</label>
+            <input type="text" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+          </div>
+          <div>
+            <label class="block mb-2">Email</label>
+            <input type="email" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary-500" required />
+          </div>
+          <div>
+            <label class="block mb-2">Feedback</label>
+            <textarea class="w-full p-3 border rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-secondary-500" required></textarea>
+          </div>
+          <button type="submit" class="w-full bg-secondary-500 text-white py-3 rounded-lg hover:bg-secondary-600 transition-colors duration-200">Submit Feedback</button>
+        </form>
+      </div>
+    </section>
+    
+    <!-- Visit Section -->
+    <section id="visit" class="py-20 px-4">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl font-bold text-center mb-12">Visit Us</h2>
+        <div class="h-96 rounded-xl overflow-hidden shadow-lg">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3770.0472905047456!2d73.87945651591379!3d18.51981718732967!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2bf3f5eab40d7%3A0xe1c83bf5af0b2c9c!2sVishwakarma%20Institute%20of%20Information%20Technology!5e0!3m2!1sen!2sin!4v1680537671976!5m2!1sen!2sin" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+      <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8">
+        <div>
+          <h3 class="text-xl font-bold mb-4">About Us</h3>
+          <p class="text-gray-400">Sahimatch provides intelligent invoice matching solutions powered by AI for seamless reconciliation.</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold mb-4">Contact</h3>
+          <p class="text-gray-400">Email: rajvkhanke@gmail.com</p>
+          <p class="text-gray-400">Phone: +91 7569256272</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold mb-4">Address</h3>
+          <p class="text-gray-400">Upper Indiranagar, Bibwewadi, Pune, Maharashtra, India</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold mb-4">Follow Us</h3>
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200"><i class="fab fa-linkedin"></i></a>
+            <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200"><i class="fab fa-facebook"></i></a>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+    <!-- Chatbot -->
+    <div id="chatbot" class="fixed bottom-4 right-4 z-50">
+      <button id="chatToggle" class="bg-secondary-500 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:bg-secondary-600 transition-all duration-200">
+        <i class="fas fa-comments text-xl"></i>
+      </button>
+      <div id="chatWindow" class="hidden absolute bottom-20 right-0 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-primary-200 dark:border-primary-800 animate-slide-in">
+        <div class="p-4 border-b border-primary-200 dark:border-primary-800 bg-gradient-to-r from-secondary-500 to-primary-500 rounded-t-lg relative">
+          <h3 class="font-medium text-white">Sahimatch AI Assistant</h3>
+          <button id="closeChat" class="absolute top-4 right-4 text-white hover:text-primary-200 transition-colors duration-200">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="chatMessages" class="h-80 p-4 overflow-y-auto space-y-4">
+          <div class="flex items-start gap-2">
+            <div class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-3 rounded-xl max-w-[85%]">
+              Hello! How can I help you with invoice matching today?
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t border-primary-200 dark:border-primary-800">
+          <form id="chatForm" class="flex gap-2">
+            <input type="text" id="messageInput" placeholder="Type your message..." 
+                   class="flex-1 p-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-secondary-500 dark:bg-gray-700 dark:border-gray-600" required />
+            <button type="submit" class="bg-secondary-500 hover:bg-secondary-600 text-white w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-200">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+      // Preloader removal on window load
+      window.addEventListener('load', () => {
+        const preloader = document.getElementById('preloader');
+        setTimeout(() => { preloader.classList.add('hide'); }, 500);
+      });
+      
+      // Theme Toggle Script
+      const themeToggle = document.getElementById('themeToggle');
+      const htmlElement = document.documentElement;
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        htmlElement.classList.add('dark');
+      } else {
+        htmlElement.classList.remove('dark');
+      }
+      themeToggle.addEventListener('click', () => {
+        htmlElement.classList.toggle('dark');
+        localStorage.theme = htmlElement.classList.contains('dark') ? 'dark' : 'light';
+      });
+      
+      // Mobile Menu Toggle
+      const mobileMenuButton = document.getElementById('mobileMenuButton');
+      const mobileMenu = document.getElementById('mobileMenu');
+      mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+      
+      // FAQ Data and Toggle Functionality
+      const faqData = [
+        { q: "What is Sahimatch?", a: "Sahimatch is an AI-powered invoice matching solution that automates reconciliation and classifies invoices as exact match, partial match, or no match using AIML algorithms." },
+        { q: "How does the AI matching work?", a: "Our AI uses a weighted combination of fuzzy logic, NLP, regex processing, and a Siamese neural network to analyze and match invoice data." },
+        { q: "What is the pricing model?", a: "This software is entirely free to use—no pricing at all." },
+        { q: "How can users edit the response after prediction?", a: "Users can select checkboxes to indicate which predictions are correct; unchecked predictions can be manually edited through a simple drag-and-drop interface." },
+        { q: "What different types of processing does it make at the backend?", a: "It uses NLP tools like Regex, TextBlob, word embeddings, vectorization, and cosine similarity to map the similarity between two invoices." },
+        { q: "Which fuzzy algorithms does the system use?", a: "The system uses six different fuzzy techniques including Levenshtein distance, Jaro-Winkler, RapidFuzz, FuzzyWuzzy, Jaccard, and Hamming distance." },
+        { q: "What different formats do you support?", a: "We support CSV and Excel formats as data inputs." },
+        { q: "How does the model improve over time?", a: "The model uses a reinforcement learning-driven Deep-Q learning mechanism to improve its predictions over time." },
+        { q: "What's your accuracy rate?", a: "Our AI achieves a 79.9% accuracy with the Siamese neural network; combined with NLP and fuzzy logic, this boosts accuracy up to approximately 91%." },
+        { q: "How do I contact developers for any queries or issues?", a: "Send feedback via the feedback section and our team will contact you within 24 hours." },
+        { q: "Does the system use emerging technological trends?", a: "Yes, our algorithms are based on trends like explainable AI, NLP, fuzzy logic, reinforcement learning, and generative AI." },
+        { q: "What do you mean by 'invoice'?", a: "An invoice is a commercial document issued by a seller to a buyer that itemizes a transaction." },
+        { q: "Is it cloud-based?", a: "Yes, Sahimatch is a cloud-based solution with a real-time data analytical dashboard." },
+        { q: "How do you handle exceptions?", a: "Our system flags exceptions for manual review and notifies you with details." },
+        { q: "What about compliance?", a: "We comply with regulatory standards including GDPR." }
+      ];
+      const faqContainer = document.getElementById('faqContainer');
+      faqData.forEach((item, index) => {
+        const faqItem = document.createElement('div');
+        faqItem.className = 'border border-primary-200 dark:border-primary-800 rounded-lg';
+        faqItem.innerHTML = `
+          <button onclick="toggleFAQ(${index})" class="w-full px-4 py-3 text-left font-medium hover:bg-primary-50 dark:hover:bg-primary-900 transition-colors flex justify-between items-center">
+            <span>${item.q}</span>
+            <i class="fas fa-chevron-down transition-transform duration-200"></i>
+          </button>
+          <div id="faq-${index}" class="hidden px-4 py-3 border-t border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/50">
+            ${item.a}
+          </div>
+        `;
+        faqContainer.appendChild(faqItem);
+      });
+      function toggleFAQ(index) {
+        const content = document.getElementById(`faq-${index}`);
+        const icon = content.previousElementSibling.querySelector('i');
+        content.classList.toggle('hidden');
+        icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+      }
+      
+      // Testimonial Slider Auto Loop with Navigation Dots
+      const slider = document.getElementById('testimonialSlider');
+      const dotsContainer = document.getElementById('sliderDots');
+      let currentSlide = 0;
+      const slideCount = slider.children.length;
+      for (let i = 0; i < slideCount; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'w-3 h-3 rounded-full bg-gray-300 cursor-pointer';
+        dot.dataset.index = i;
+        dot.addEventListener('click', () => {
+          currentSlide = parseInt(dot.dataset.index);
+          updateSlider();
+          updateDots();
+        });
+        dotsContainer.appendChild(dot);
+      }
+      function updateSlider() {
+        const slideWidth = slider.children[0].offsetWidth + 24;
+        slider.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
+      }
+      function updateDots() {
+        [...dotsContainer.children].forEach((dot, index) => {
+          dot.classList.toggle('bg-secondary-500', index === currentSlide);
+          dot.classList.toggle('bg-gray-300', index !== currentSlide);
+        });
+      }
+      updateDots();
+      setInterval(() => {
+        currentSlide = (currentSlide + 1) % slideCount;
+        updateSlider();
+        updateDots();
+      }, 3000);
+      
+      // Gallery Carousel Implementation
+      const gallerySlider = document.getElementById('gallerySlider');
+      const galleryDotsContainer = document.getElementById('galleryDots');
+      const galleryImages = [
+        'https://www.stampli.com/wp-content/uploads/2023/07/03-stampli-po-invoice-matching.png',
+        'https://www.chargebackgurus.com/hubfs/Manual%20Review.png',
+        'https://www.stampli.com/wp-content/uploads/2023/07/01-stampli-po-_-invoice-matching-hero.png',
+        'https://www.techopedia.com/wp-content/uploads/2023/02/understandable_ai-1.jpg',
+        'https://cdn1.dronahq.com/wp-content/uploads/2024/08/Dashboard-Image-Final.webp',
+        'https://www.mdpi.com/electronics/electronics-13-00775/article_deploy/html/images/electronics-13-00775-g002.png'
+      ];
+      galleryImages.forEach(src => {
+        const slide = document.createElement('div');
+        slide.className = 'min-w-[300px] h-[200px] mr-4 flex-shrink-0';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = 'Gallery Image';
+        img.loading = 'lazy';
+        img.onerror = () => { img.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found'; };
+        img.className = 'w-full h-full object-cover rounded-2xl shadow-lg transform hover:scale-105 transition-transform duration-300';
+        slide.appendChild(img);
+        gallerySlider.appendChild(slide);
+      });
+      let currentGallerySlide = 0;
+      const gallerySlideCount = gallerySlider.children.length;
+      for (let i = 0; i < gallerySlideCount; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'w-3 h-3 rounded-full bg-gray-300 cursor-pointer';
+        dot.dataset.index = i;
+        dot.addEventListener('click', () => {
+          currentGallerySlide = parseInt(dot.dataset.index);
+          updateGallerySlider();
+          updateGalleryDots();
+        });
+        galleryDotsContainer.appendChild(dot);
+      }
+      function updateGallerySlider() {
+        const slideWidth = gallerySlider.children[0].offsetWidth + 16;
+        gallerySlider.style.transform = `translateX(-${currentGallerySlide * slideWidth}px)`;
+      }
+      function updateGalleryDots() {
+        [...galleryDotsContainer.children].forEach((dot, index) => {
+          dot.classList.toggle('bg-secondary-500', index === currentGallerySlide);
+          dot.classList.toggle('bg-gray-300', index !== currentGallerySlide);
+        });
+      }
+      updateGalleryDots();
+      setInterval(() => {
+        currentGallerySlide = (currentGallerySlide + 1) % gallerySlideCount;
+        updateGallerySlider();
+        updateGalleryDots();
+      }, 4000);
+      
+      // Chatbot Functionality
+      const chatToggle = document.getElementById('chatToggle');
+      const chatWindow = document.getElementById('chatWindow');
+      const closeChat = document.getElementById('closeChat');
+      const chatForm = document.getElementById('chatForm');
+      const messageInput = document.getElementById('messageInput');
+      const chatMessages = document.getElementById('chatMessages');
+      chatToggle.addEventListener('click', () => { chatWindow.classList.toggle('hidden'); });
+      closeChat.addEventListener('click', () => { chatWindow.classList.add('hidden'); });
+      chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userMsg = messageInput.value;
+        if (!userMsg.trim()) return;
+        
+        // User message
+        chatMessages.innerHTML += `
+          <div class="flex justify-end gap-2">
+            <div class="bg-secondary-500 text-white p-3 rounded-xl max-w-[85%] dark:bg-secondary-600">
+              ${userMsg}
+            </div>
+          </div>`;
+        
+        messageInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Get bot response
+        const response = await sendMessageToGemini(userMsg);
+        
+        // Bot message
+        chatMessages.innerHTML += `
+          <div class="flex items-start gap-2">
+            <div class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-3 rounded-xl max-w-[85%]">
+              ${response}
+            </div>
+          </div>`;
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+      async function sendMessageToGemini(userText) {
+        // Replace YOUR_API_KEY_HERE with your actual API key.
+        const apiKey = 'AIzaSyBtXV2xJbrWVV57B5RWy_meKXOA59HFMeY';
+        if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+          console.error('Gemini API key is missing or not configured.');
+          return "Gemini API key is not configured. Please set your API key.";
+        }
+        const prompt = `You are a chatbot for a partial invoice matching AI application called Sahimatch. Sahimatch is designed for Intelligent Partial Invoice Matching, automating matching even when invoice data is incomplete or contains errors.
+
+Key Features:
+- Automated AI/ML matching
+- Partial data handling using NLP
+- Confidence scoring for match quality
+- User-friendly manual review interface
+- Self-learning improvements from feedback
+
+Expected Outcomes:
+- High matching accuracy
+- Adaptive model improvements
+- Scalable processing of large datasets
+- Comprehensive match reporting
+
+Please answer questions related to these features and outcomes.`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const payload = { contents: [{ parts: [{ text: prompt + " " + userText }] }] };
+        try {
+          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!res.ok) {
+            const errorData = await res.json();
+            console.error('Gemini API error:', errorData);
+            throw new Error(`Gemini API failed with status ${res.status}: ${errorData.error?.message || 'Unknown error'}`);
+          }
+          const data = await res.json();
+          if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts.length > 0) {
+            return data.candidates[0].content.parts[0].text;
+          } else {
+            console.warn('Gemini API response missing expected content:', data);
+            return "No response received from the AI. Please try again.";
+          }
+        } catch (error) {
+          console.error('Error calling Gemini API:', error);
+          return `There was an error processing your request: ${error.message}. Please try again later.`;
+        }
+      }
+      
+      // Authentication Modal and Login/Signup Handling
+      const authModal = document.getElementById('authModal');
+      const loginSignupButton = document.getElementById('loginSignupButton');
+      const closeAuthModal = document.getElementById('closeAuthModal');
+      const signInTab = document.getElementById('signInTab');
+      const signUpTab = document.getElementById('signUpTab');
+      const signInForm = document.getElementById('signInForm');
+      const signUpForm = document.getElementById('signUpForm');
+      
+      loginSignupButton.addEventListener('click', () => { authModal.classList.remove('hidden'); });
+      closeAuthModal.addEventListener('click', () => { authModal.classList.add('hidden'); });
+      
+      signInTab.addEventListener('click', () => {
+        signInTab.classList.add('border-secondary-500');
+        signUpTab.classList.remove('border-secondary-500');
+        signInForm.classList.remove('hidden');
+        signUpForm.classList.add('hidden');
+      });
+      signUpTab.addEventListener('click', () => {
+        signUpTab.classList.add('border-secondary-500');
+        signInTab.classList.remove('border-secondary-500');
+        signUpForm.classList.remove('hidden');
+        signInForm.classList.add('hidden');
+      });
+      
+      // Function to simulate storing user data on the backend (to data.txt)
+      async function storeUserData(userData) {
+        try {
+          // Replace '/saveUserData' with your backend endpoint that writes to data.txt
+          const res = await fetch('/saveUserData', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+          });
+          return await res.json();
+        } catch (error) {
+          console.error('Error storing user data:', error);
+          return null;
+        }
+      }
+      
+      // Handle login form submission
+      document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = e.target.querySelector('input[type=email]').value;
+        // Retrieve stored user data; if not found, default to a sample user (should be registered via sign up)
+        const storedUser = JSON.parse(localStorage.getItem('userData'));
+        if (!storedUser || storedUser.email !== email) {
+          alert('User not registered or incorrect email!');
+          return;
+        }
+        localStorage.setItem('loggedIn', 'true');
+        updateNavForLoggedInUser();
+        authModal.classList.add('hidden');
+      });
+      
+      // Handle register form submission
+      document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const mobile = document.getElementById('mobile').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        if (password !== confirmPassword) {
+          alert('Passwords do not match!');
+          return;
+        }
+        const userData = { firstName, lastName, email, mobile, password };
+        // Save user data in localStorage (simulate persistent storage) and send to backend to store in data.txt
+        localStorage.setItem('userData', JSON.stringify(userData));
+        storeUserData(userData); // Simulated backend storage (ensure your server writes to data.txt)
+        localStorage.setItem('loggedIn', 'true');
+        updateNavForLoggedInUser();
+        authModal.classList.add('hidden');
+      });
+      
+      // Update navigation after login/signup: hide loginSignupButton and add user icon with dropdown
+      function updateNavForLoggedInUser() {
+        const loginSignupButton = document.getElementById('loginSignupButton');
+        if (loginSignupButton) {
+          loginSignupButton.style.display = 'none';
+        }
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        let initial = 'U';
+        if (userData && userData.firstName) {
+          initial = userData.firstName.charAt(0).toUpperCase();
+        }
+        // Check if user icon already exists; if not, create it
+        if (!document.getElementById('userIcon')) {
+          const userMenu = document.createElement('div');
+          userMenu.className = 'user-menu';
+          userMenu.id = 'userMenu';
+          const userIcon = document.createElement('div');
+          userIcon.className = 'user-icon';
+          userIcon.id = 'userIcon';
+          userIcon.innerText = initial;
+          userMenu.appendChild(userIcon);
+          const dropdown = document.createElement('div');
+          dropdown.className = 'dropdown';
+          dropdown.id = 'dropdownMenu';
+          dropdown.innerHTML = `<a href="#" onclick="showProfile()">Profile</a>
+                                <a href="#" onclick="logout()">Logout</a>`;
+          userMenu.appendChild(dropdown);
+          const navRight = document.querySelector('.nav-right');
+          if (navRight) {
+            navRight.appendChild(userMenu);
+          } else {
+            document.querySelector('nav').appendChild(userMenu);
+          }
+          // Toggle dropdown when clicking the user menu
+          userMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown();
+          });
+        }
+      }
+      function toggleDropdown() {
+        const dropdown = document.getElementById('dropdownMenu');
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      }
+      function showProfile() {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        alert(`User Profile:\nName: ${userData.firstName} ${userData.lastName}\nEmail: ${userData.email}\nMobile: ${userData.mobile}`);
+      }
+      function logout() {
+        // On logout, remove only the loggedIn flag, not the userData so that it persists
+        localStorage.removeItem('loggedIn');
+        location.reload();
+      }
+      document.addEventListener('click', function(event) {
+        if (!event.target.closest('.user-menu')) {
+          const dropdown = document.getElementById('dropdownMenu');
+          if (dropdown) dropdown.style.display = 'none';
+        }
+      });
+      
+      // On page load, if user is logged in, update nav
+      if (localStorage.getItem('loggedIn') === 'true') {
+        updateNavForLoggedInUser();
+      }
+    </script>
+  </body>
+</html>
