@@ -28,7 +28,7 @@
 ---
 
 ## Problem Statement
-**Problem Statement ID: 3.2 Intelligent Partial Invoice Matching**
+**Intelligent Partial Invoice Matching**
 
 Matching invoice numbers between two datasets is inherently challenging due to:
 - **Partial Data:** Invoices may be truncated or missing prefixes/suffixes.
