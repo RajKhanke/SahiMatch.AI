@@ -1,0 +1,15 @@
+Flask
+pandas
+numpy
+rapidfuzz
+fuzzywuzzy
+python-Levenshtein
+scikit-learn
+textdistance
+sentence-transformers
+tqdm
+wordcloud
+chardet
+xlsxwriter
+textblob
+gunicorn
