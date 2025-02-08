@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Intelligent Partial Invoice Matching</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+      /* Your existing CSS variables and styles */
+      :root {
+        --primary-color: #4a90e2;
+        --secondary-color: #2c5282;
+        --success-color: #48bb78;
+        --danger-color: #e53e3e;
+        --background-light: #f7fafc;
+        --background-dark: #1a202c;
+        --text-light: #2d3748;
+        --text-dark: #f7fafc;
+        --card-light: #ffffff;
+        --card-dark: #2d3748;
+        --input-light: #f8fafc;
+        --input-dark: #2d3748;
+        --border-light: #e2e8f0;
+        --border-dark: #4a5568;
+        --spacing-unit: 1rem;
+        --border-radius: 12px;
+        --transition-speed: 0.3s;
+      }
+      body {
+        font-family: 'Poppins', sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        transition: background-color var(--transition-speed), color var(--transition-speed);
+        background: var(--background-light);
+        color: var(--text-light);
+        padding: calc(var(--spacing-unit) * 2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      body.dark {
+        background: var(--background-dark);
+        color: var(--text-dark);
+      }
+      .container {
+        max-width: 1400px;
+        width: 100%;
+        padding: calc(var(--spacing-unit) * 2);
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        font-weight: 900;
+        text-align: center;
+        margin: calc(var(--spacing-unit) * 4) 0;
+        padding: calc(var(--spacing-unit) * 2);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        transform: scale(1);
+        transition: transform 0.3s ease;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        animation: fadeInDown 1.2s ease-out;
+      }
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all var(--transition-speed);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+      }
+      .theme-toggle:hover {
+        transform: rotate(180deg) scale(1.1);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+      }
+      .upload-container, .table-container {
+        background: var(--card-light);
+        padding: calc(var(--spacing-unit) * 3);
+        border-radius: var(--border-radius);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        margin-bottom: calc(var(--spacing-unit) * 4);
+        transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        animation: fadeIn 1s ease-out;
+      }
+      body.dark .upload-container,
+      body.dark .table-container {
+        background: var(--card-dark);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      }
+      .upload-container:hover,
+      .table-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+      }
+      .form-group {
+        margin-bottom: calc(var(--spacing-unit) * 2);
+      }
+      .form-control {
+        border-radius: var(--border-radius);
+        border: 2px solid var(--border-light);
+        padding: calc(var(--spacing-unit) * 1.5);
+        transition: all var(--transition-speed);
+        background: var(--input-light);
+        color: var(--text-light);
+        height: auto;
+      }
+      body.dark .form-control {
+        background: var(--input-dark);
+        border-color: var(--border-dark);
+        color: var(--text-dark);
+      }
+      .form-control:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      }
+      .form-control::file-selector-button {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        margin-right: 16px;
+        transition: all 0.3s;
+      }
+      .form-control::file-selector-button:hover {
+        background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+        transform: translateY(-1px);
+      }
+      .btn-custom {
+        padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
+        border-radius: var(--border-radius);
+        font-weight: 600;
+        transition: all var(--transition-speed);
+        position: relative;
+        overflow: hidden;
+        border: none;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+      }
+      .btn-custom::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+      }
+      .btn-custom:hover::after {
+        width: 300%;
+        height: 300%;
+      }
+      .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      }
+      .table {
+        margin-top: calc(var(--spacing-unit) * 2);
+      }
+      .table thead th {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: white;
+        font-weight: 600;
+        padding: calc(var(--spacing-unit) * 1.5);
+        border: none;
+      }
+      .table tbody tr {
+        transition: background-color var(--transition-speed);
+        color: var(--text-light);
+      }
+      body.dark .table tbody tr {
+        color: var(--text-dark);
+      }
+      .table tbody tr:hover {
+        background-color: rgba(37, 99, 235, 0.1);
+      }
+      .edit-btn {
+        background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+        color: white !important;
+        padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+        font-size: 0.9rem;
+        border-radius: var(--border-radius);
+        border: none;
+      }
+      .edit-btn:hover {
+        background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
+        transform: translateY(-2px);
+      }
+      .frozen-badge {
+        padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+        border-radius: var(--border-radius);
+        background: linear-gradient(135deg, #059669, #10b981);
+        color: white;
+      }
+      .modal-content {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+      }
+      .modal-header {
+        background: linear-gradient(135deg, #dc2626, #ef4444);
+        color: white;
+        border: none;
+        padding: calc(var(--spacing-unit) * 2);
+      }
+      .modal-title {
+        color: white;
+      }
+      .modal-body {
+        padding: calc(var(--spacing-unit) * 3);
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-50px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      /* Dark mode specific styles */
+      body.dark .table {
+        color: var(--text-dark);
+      }
+      body.dark .form-control {
+        background: var(--card-dark);
+      }
+      body.dark .modal-content {
+        background: var(--card-dark);
+        color: var(--text-dark);
+      }
+      body.dark .modal-body {
+        color: var(--text-dark);
+      }
+      body.dark .close {
+        color: white;
+      }
+      body.dark label {
+        color: var(--text-dark);
+      }
+      .btn-success {
+        background: linear-gradient(135deg, #059669, #10b981) !important;
+        border: none !important;
+      }
+      .btn-info {
+        background: linear-gradient(135deg, #0284c7, #0ea5e9) !important;
+        border: none !important;
+      }
+      .btn-secondary {
+        background: linear-gradient(135deg, #4b5563, #6b7280) !important;
+        border: none !important;
+      }
+      .btn-danger {
+        background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+        border: none !important;
+      }
+      /* =====================================================
+         Updated Clock Loader CSS (Purple Clock with Moving Hands)
+      ====================================================== */
+      .loader-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+      .clock-loader {
+        text-align: center;
+      }
+      .clock-face {
+        width: 120px;
+        height: 120px;
+        border: 8px solid #7c3aed;
+        border-radius: 50%;
+        position: relative;
+        background: rgba(124, 58, 237, 0.1);
+        margin: 0 auto 20px;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+      }
+      /* Positioning each hand so its bottom is at the center of the clock-face */
+      .hand {
+        position: absolute;
+        left: 50%;
+        bottom: 50%;
+        transform-origin: bottom;
+        transform: translateX(-50%) rotate(0deg);
+      }
+      .hour-hand {
+        width: 4px;
+        height: 25px;
+        background: #7c3aed;
+        animation: rotate-hour 8s linear infinite;
+      }
+      .minute-hand {
+        width: 3px;
+        height: 35px;
+        background: #7c3aed;
+        animation: rotate-minute 6s linear infinite;
+      }
+      .second-hand {
+        width: 2px;
+        height: 45px;
+        background: #2563eb;
+        animation: rotate-second 2s linear infinite;
+      }
+      .center-dot {
+        width: 12px;
+        height: 12px;
+        background: #7c3aed;
+        border-radius: 50%;
+        position: absolute;
+        top: calc(50% - 6px);
+        left: calc(50% - 6px);
+        box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+      }
+      /* Optional tick marks on the clock-face */
+      .tick {
+        position: absolute;
+        width: 3px;
+        height: 10px;
+        background: #7c3aed;
+        top: 4px;
+        left: calc(50% - 1.5px);
+        transform-origin: 50% 60px;
+      }
+      .tick-1 { transform: rotate(0deg); }
+      .tick-2 { transform: rotate(90deg); }
+      .tick-3 { transform: rotate(180deg); }
+      .tick-4 { transform: rotate(270deg); }
+      @keyframes rotate-hour {
+        from { transform: translateX(-50%) rotate(0deg); }
+        to { transform: translateX(-50%) rotate(360deg); }
+      }
+      @keyframes rotate-minute {
+        from { transform: translateX(-50%) rotate(0deg); }
+        to { transform: translateX(-50%) rotate(360deg); }
+      }
+      @keyframes rotate-second {
+        from { transform: translateX(-50%) rotate(0deg); }
+        to { transform: translateX(-50%) rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <i class="fas fa-moon"></i>
+    </button>
+    <!-- Loader Container (hidden by default) -->
+    <div class="loader-container" id="loader-container" style="display: none;">
+      <div class="clock-loader">
+        <div class="clock-face">
+          <div class="hand hour-hand"></div>
+          <div class="hand minute-hand"></div>
+          <div class="hand second-hand"></div>
+          <div class="center-dot"></div>
+          <div class="tick tick-1"></div>
+          <div class="tick tick-2"></div>
+          <div class="tick tick-3"></div>
+          <div class="tick tick-4"></div>
+        </div>
+        <div class="loading-text" style="color: #fff; font-size: 18px; margin-top: 20px; font-weight: 500;">Processing Invoices...</div>
+      </div>
+    </div>
+    <div class="container mx-auto">
+      <h1>Intelligent Partial Invoice Matching</h1>
+      <div class="upload-container">
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="file1">Upload First Dataset (CSV/Excel):</label>
+            <input type="file" class="form-control" id="file1" name="file1" required>
+          </div>
+          <div class="form-group">
+            <label for="file2">Upload Second Dataset (CSV/Excel):</label>
+            <input type="file" class="form-control" id="file2" name="file2" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-custom btn-block">
+            <span>Process Invoices</span>
+          </button>
+        </form>
+      </div>
+      {% if results %}
+      <div class="table-container">
+        <h2 class="text-center font-bold mb-4">Matched Invoices Preview</h2>
+        <div class="table-responsive">
+          <table class="table table-striped table-bordered" id="resultsTable">
+            <thead>
+              <tr>
+                <th>Invoice Number 1</th>
+                <th>Invoice Number 2</th>
+                <th>Similarity Score</th>
+                <th>Manual Review Status</th>
+                <th>Recommendation</th>
+                <th>Reason</th>
+                <th>Comments</th>
+                <th class="action-btn">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in results %}
+              <tr data-index="{{ loop.index0 }}">
+                <td class="invoice_number1">{{ row.invoice_number1 }}</td>
+                <td class="invoice_number2">{{ row.invoice_number2 }}</td>
+                <td class="similarity_score">{{ row.similarity_score }}</td>
+                <td class="manual_review_status">
+                  {% if row.recommendation == "Exact Match" %}
+                  No
+                  {% else %}
+                  Needs Review
+                  {% endif %}
+                </td>
+                <td class="recommendation">{{ row.recommendation }}</td>
+                <td class="reason">{{ row.reason }}</td>
+                <td class="comments">{{ row.comments }}</td>
+                <td class="action-btn">
+                  <div class="text-center">
+                    {% if row.recommendation == "Exact Match" %}
+                    <button class="btn btn-success btn-custom freeze-btn" disabled style="padding: 10px 20px;filter: brightness(1.3);">
+                      <i class="fas fa-lock"></i> Freeze
+                    </button>
+                    {% else %}
+                    <input type="checkbox" class="select-review-checkbox" data-index="{{ loop.index0 }}" style="width:30px; height:30px;">
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+          <a href="{{ url_for('download_csv') }}" class="btn btn-success btn-custom btn-block">
+            <i class="fas fa-file-csv"></i> Download CSV Report
+          </a>
+        </div>
+        <div class="col-md-4 mb-3">
+          <a href="{{ url_for('download_excel') }}" class="btn btn-info btn-custom btn-block">
+            <i class="fas fa-file-excel"></i> Download Excel Report
+          </a>
+        </div>
+        <div class="col-md-4 mb-3">
+          <!-- New Download Summary Stats Button -->
+          <button id="downloadStatsBtn" class="btn btn-secondary btn-custom btn-block">
+            <i class="fas fa-chart-bar"></i> Download Summary Stats
+          </button>
+        </div>
+      </div>
+      <div class="text-center mb-5">
+        <button id="saveUpdates" class="btn btn-primary btn-custom">
+          <i class="fas fa-save"></i> Save All Updates
+        </button>
+      </div>
+      {% endif %}
+    </div>
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editModalLabel">
+              <i class="fas fa-edit"></i> Edit Invoice Match
+            </h5>
+            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <form id="editForm">
+            <div class="modal-body">
+              <!-- Non-editable fields -->
+              <div class="form-group">
+                <label>Invoice Number 1:</label>
+                <p id="modalInvoice1" class="font-weight-bold"></p>
+              </div>
+              <div class="form-group">
+                <label>Invoice Number 2 (Current):</label>
+                <p id="modalInvoice2" class="font-weight-bold"></p>
+              </div>
+              <div class="form-group">
+                <label>Similarity Score:</label>
+                <p id="modalScore" class="font-weight-bold"></p>
+              </div>
+              <!-- New select box for corrected invoice from dataset2 -->
+              <div class="form-group">
+                <label for="modalSelectInvoice2">Select Correct Invoice from Dataset 2:</label>
+                <select class="form-control" id="modalSelectInvoice2">
+                  <option value="">-- Select --</option>
+                  {% for inv in unique_values %}
+                  <option value="{{ inv }}">{{ inv }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <!-- Editable fields -->
+              <div class="form-group">
+                <label for="modalReviewStatus">Manual Review Status:</label>
+                <select class="form-control" id="modalReviewStatus" required>
+                  <option value="Needs Review">Needs Review</option>
+                  <option value="No Review Needed">No Review Needed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="modalRecommendation">Recommendation:</label>
+                <select class="form-control" id="modalRecommendation" required>
+                  <option value="Unmatched">Unmatched</option>
+                  <option value="Partial Match">Partial Match</option>
+                  <option value="Exact Match">Exact Match</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="modalReason">Reason:</label>
+                <textarea class="form-control" id="modalReason" rows="3" required></textarea>
+              </div>
+              <div class="form-group">
+                <label for="modalComments">Comments:</label>
+                <textarea class="form-control" id="modalComments" rows="2"></textarea>
+              </div>
+              <!-- Hidden index -->
+              <input type="hidden" id="modalRowIndex">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary btn-custom" data-dismiss="modal">
+                <i class="fas fa-times"></i> Cancel
+              </button>
+              <button type="submit" class="btn btn-danger btn-custom">
+                <i class="fas fa-save"></i> Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- jQuery, Popper.js, Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <script>
+      // Theme toggle functionality
+      function toggleTheme() {
+        const body = document.body;
+        const themeToggle = document.querySelector('.theme-toggle i');
+        body.classList.toggle('dark');
+        if (body.classList.contains('dark')) {
+          themeToggle.classList.remove('fa-moon');
+          themeToggle.classList.add('fa-sun');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          themeToggle.classList.remove('fa-sun');
+          themeToggle.classList.add('fa-moon');
+          localStorage.setItem('theme', 'light');
+        }
+      }
+      // Check for saved theme preference
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        document.querySelector('.theme-toggle i').classList.replace('fa-moon', 'fa-sun');
+      }
+
+      // New JS: Download Summary Stats (Excel & JSON) when button is clicked
+      document.getElementById('downloadStatsBtn').addEventListener('click', function() {
+        // Trigger Excel stats download
+        const excelLink = document.createElement('a');
+        excelLink.href = "{{ url_for('download_stats_excel') }}";
+        excelLink.style.display = 'none';
+        document.body.appendChild(excelLink);
+        excelLink.click();
+        document.body.removeChild(excelLink);
+
+        // Trigger JSON stats download
+        const jsonLink = document.createElement('a');
+        jsonLink.href = "{{ url_for('download_stats_json') }}";
+        jsonLink.style.display = 'none';
+        document.body.appendChild(jsonLink);
+        jsonLink.click();
+        document.body.removeChild(jsonLink);
+      });
+
+      // Populate modal with row data when an edit button is clicked
+      $(document).on("click", ".edit-btn", function() {
+        var rowIndex = $(this).data("index");
+        var row = $("#resultsTable tbody tr").eq(rowIndex);
+        var invoice1 = row.find(".invoice_number1").text().trim();
+        var invoice2 = row.find(".invoice_number2").text().trim();
+        var score = row.find(".similarity_score").text().trim();
+        var reviewStatus = row.find(".manual_review_status").text().trim();
+        var recommendation = row.find(".recommendation").text().trim();
+        var reason = row.find(".reason").text().trim();
+        var comments = row.find(".comments").text().trim();
+        $("#modalRowIndex").val(rowIndex);
+        $("#modalInvoice1").text(invoice1);
+        $("#modalInvoice2").text(invoice2);
+        $("#modalScore").text(score);
+        $("#modalReviewStatus").val(reviewStatus);
+        $("#modalRecommendation").val(recommendation);
+        $("#modalReason").val(reason);
+        $("#modalComments").val(comments);
+        // Reset the select box
+        $("#modalSelectInvoice2").val("");
+      });
+
+      // Updated edit form submit handler: feedback is sent to the server, which returns recalculated values.
+      $("#editForm").on("submit", function(e) {
+        e.preventDefault();
+        var rowIndex = $("#modalRowIndex").val();
+        var selectedInvoice2 = $("#modalSelectInvoice2").val();
+        var newComments = $("#modalComments").val();
+        var row = $("#resultsTable tbody tr").eq(rowIndex);
+        var invoice1 = row.find(".invoice_number1").text().trim();
+        // Send feedback to the server
+        $.ajax({
+          url: "{{ url_for('save_feedback') }}",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            invoice_number1: invoice1,
+            selected_invoice2: selectedInvoice2,
+            comments: newComments
+          }),
+          success: function(response) {
+            alert(response.message);
+          },
+          error: function(xhr, status, error) {
+            alert("Error saving feedback: " + error);
+          }
+        });
+        $("#editModal").modal("hide");
+      });
+
+      // When "Save All Updates" is clicked, update each row's action cell based on its type.
+      $("#saveUpdates").on("click", function() {
+        var updatedData = [];
+        $("#resultsTable tbody tr").each(function() {
+          var row = $(this);
+          var rec = row.find(".recommendation").text().trim();
+          var actionCell = row.find("td.action-btn");
+          var rowIndex = row.data("index");
+          // For Exact Match, always freeze
+          if(rec === "Exact Match") {
+            row.find(".manual_review_status").text("No");
+            actionCell.html('<div class="text-center"><button class="btn btn-success btn-custom freeze-btn" disabled style="padding: 10px 20px;filter: brightness(1.3);"><i class="fas fa-lock"></i> Freeze</button></div>');
+          } else {
+            // For Partial Match or Unmatched, check the checkbox state.
+            var checkbox = row.find("input.select-review-checkbox");
+            if(checkbox.length > 0) {
+              if(checkbox.is(":checked")) {
+                // If checked, auto-freeze this row.
+                row.find(".manual_review_status").text("No");
+                actionCell.html('<div class="text-center"><button class="btn btn-success btn-custom freeze-btn" disabled style="padding: 10px 20px;filter: brightness(1.3);"><i class="fas fa-lock"></i> Freeze</button></div>');
+              } else {
+                // If not checked, allow manual editing.
+                actionCell.html('<button class="btn btn-sm edit-btn btn-custom" data-index="'+ rowIndex +'" data-toggle="modal" data-target="#editModal"><i class="fas fa-edit"></i> Edit</button>');
+              }
+            }
+          }
+          updatedData.push({
+            invoice_number1: row.find(".invoice_number1").text().trim(),
+            invoice_number2: row.find(".invoice_number2").text().trim(),
+            similarity_score: parseFloat(row.find(".similarity_score").text().trim()),
+            manual_review_status: row.find(".manual_review_status").text().trim(),
+            recommendation: row.find(".recommendation").text().trim(),
+            reason: row.find(".reason").text().trim(),
+            comments: row.find(".comments").text().trim(),
+            editable: row.find("button.edit-btn").length > 0
+          });
+        });
+        $.ajax({
+          url: "{{ url_for('save_updates') }}",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(updatedData),
+          success: function(response) {
+            alert("Updates taken successfully!");
+          },
+          error: function(xhr, status, error) {
+            alert("Error saving updates: " + error);
+          }
+        });
+      });
+
+      // Loader control functions
+      function showLoader() {
+        document.getElementById('loader-container').style.display = 'flex';
+      }
+
+      function hideLoader() {
+        document.getElementById('loader-container').style.display = 'none';
+      }
+
+      // Show loader on file upload submission
+      document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        showLoader();
+        // Optional: Disable the submit button to prevent double submission
+        const submitButton = this.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.disabled = true;
+        }
+      });
+
+      // Initialize loader state
+      document.addEventListener('DOMContentLoaded', function() {
+        {% if results %}
+          hideLoader();
+        {% else %}
+          // Only show loader if form was just submitted
+          if (document.referrer === window.location.href) {
+            showLoader();
+          }
+        {% endif %}
+      });
+    </script>
+  </body>
+</html>
