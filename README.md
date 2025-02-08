@@ -14,6 +14,7 @@
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
 - [Setup & Installation](#setup--installation)
+- [Output](#output)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
@@ -163,6 +164,12 @@ You can use a live server extension (e.g., in VS Code) or run a simple HTTP serv
 python -m http.server 8000
 ~~~
 Open your browser and navigate to `http://localhost:8000`.
+
+
+
+## Output
+
+
 
 ## Usage
 
