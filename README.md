@@ -165,7 +165,7 @@ python -m http.server 8000
 ~~~
 Open your browser and navigate to `http://localhost:8000`.
 
-
+---
 
 ## Output
 
