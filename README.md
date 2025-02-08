@@ -127,9 +127,104 @@ SahiMatch.AI is built on a modular architecture that consists of:
 
 ---
 
-## Setup & Installation
 
-### Backend
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/yourusername/SahiMatch.AI.git
+# Setup & Installation
+
+## Backend
+
+### Clone the Repository:
+~~~bash
+git clone https://github.com/yourusername/SahiMatch.AI.git
+~~~
+
+### Navigate to the Project Directory:
+~~~bash
+cd SahiMatch.AI
+~~~
+
+### Install Dependencies:
+~~~bash
+pip install -r requirements.txt
+~~~
+
+### Run the Application:
+~~~bash
+python app.py
+~~~
+
+## Frontend
+
+### Open the Frontend Interface:
+The main UI file is `index.html` located in the root directory.
+
+### Run on a Live Server:
+You can use a live server extension (e.g., in VS Code) or run a simple HTTP server:
+~~~bash
+python -m http.server 8000
+~~~
+Open your browser and navigate to `http://localhost:8000`.
+
+## Usage
+
+### Automated Matching:
+- Upload your invoice datasets using the drag-and-drop feature.
+- The system will automatically perform matching analysis, compute similarity scores, and display results with corresponding confidence scores.
+
+### Manual Review & Corrections:
+- Use the user-friendly interface to adjust and fine-tune uncertain matches.
+- The system records these manual edits to reinforce and improve future predictions.
+
+### Reporting:
+After processing, a detailed report (e.g., an Excel sheet) is generated. This report outlines:
+- Matched entries and their confidence scores.
+- The rationale behind each match (e.g., reasons for score assignments).
+- Recommendations for manual review where necessary.
+
+## Contributing
+
+Contributions to SahiMatch.AI are welcome! To contribute:
+
+### Fork the Repository
+
+### Create a Feature Branch:
+~~~bash
+git checkout -b feature/YourFeature
+~~~
+
+### Commit Your Changes:
+~~~bash
+git commit -m "Add new feature or fix issue"
+~~~
+
+### Push to Your Branch:
+~~~bash
+git push origin feature/YourFeature
+~~~
+
+### Open a Pull Request:
+Please refer to our `CONTRIBUTING.md` for detailed guidelines.
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
+
+## Acknowledgements
+
+### Open Source Community:
+Thanks to the developers of the open-source libraries and frameworks that have made this project possible.
+
+### Inspiration:
+Inspired by real-world challenges in invoice reconciliation and the need for intelligent, scalable matching solutions.
+
+### Support:
+Special thanks to all early adopters and contributors for their invaluable feedback and support.
+
+## Share
+
+If you find SahiMatch.AI useful, please consider sharing it with your network!
+
+- **GitHub**: Fork and Star the Repository.
+- **Social Media**: Share on Twitter, LinkedIn, or your favorite platform with the hashtag `#SahiMatchAI`.
+- **Community**: Let us know your feedback or contribute to the project by opening an issue or submitting a pull request.
+
+**Happy Matching! 🚀**
