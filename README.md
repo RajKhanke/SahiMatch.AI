@@ -171,11 +171,19 @@ Open your browser and navigate to `http://localhost:8000`.
 
 ![img1](https://github.com/user-attachments/assets/4085e898-dae1-429b-8bb7-51eb00a94976)
 
+
+
 ![img11](https://github.com/user-attachments/assets/998ff1e5-3b0e-4146-b18f-7f6e7e94185f)
+
+
 
 ![img111](https://github.com/user-attachments/assets/73d3aec9-a86c-4a03-9667-b42ab0214aa7)
 
+
+
 ![img1111](https://github.com/user-attachments/assets/ef182bb6-485e-4cbe-8de5-8ee189e98c99)
+
+
 
 ![img11111](https://github.com/user-attachments/assets/010b8dce-194c-4c65-9032-64e394c786c1)
 
